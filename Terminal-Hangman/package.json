@@ -1,0 +1,33 @@
+{
+  "name": "terminal-hangman",
+  "version": "1.0.0",
+  "description": "Hangman Game",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "lint": "npx eslint . || exit 0",
+    "lint:fix": "npx eslint . --fix || exit 0"
+  },
+  "keywords": [
+    "Hangman",
+    "Javascript",
+    "Node"
+  ],
+  "author": "Viktor Ödman",
+  "license": "MIT",
+  "devDependencies": {
+    "@lnu/eslint-config": "^1.0.6",
+    "eslint": "^6.8.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jsdoc": "^21.0.0",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  },
+  "eslintConfig": {
+    "extends": "@lnu"
+  },
+  "dependencies": {
+    "inquirer": "^7.0.4"
+  }
+}
