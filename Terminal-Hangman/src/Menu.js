@@ -14,12 +14,15 @@ class Menu extends EvenEmitter {
    * Creates an instance of Menu.
    *
    * @memberof Menu
+   * @param {Array} menuItems - List of menu Items.
+   * @param menuEvent
    */
-  constructor () {
+  constructor (menuItems, menuEvent) {
     super()
     this._gameIO = new GameIO()
-    this._menuItems = ['Play Game', 'Change Settings', 'Quit Game']
-    this._menuEvent = 'menuchoice'
+    this._menuItems = menuItems
+    this._menuEvent = menuEvent
+    this._menuChoiceEvent = 'menuchoice'
   }
 
   /**
@@ -28,12 +31,21 @@ class Menu extends EvenEmitter {
    * @memberof Menu
    */
   listMenuItems () {
-    this._gameIO.on(this._menuEvent, (menuItem) => {
-      console.clear()
-      this._gameIO.removeAllListeners(this._menuEvent)
-      this.emit('menuitemchosen', menuItem)
+    const questionObject = {
+      type: 'list',
+      message: 'Welcome To Terminal Hangman!',
+      name: 'menuitem',
+      choices: this._menuItems,
+      prefix: ''
+    }
+
+    this._gameIO.on(this._menuChoiceEvent, (menuItem) => {
+      this._gameIO.removeAllListeners(this._menuChoiceEvent)
+
+      this.emit(this._menuEvent, menuItem[questionObject.name])
     })
-    this._gameIO.listItems('Welcome To Terminal Hangman!', 'menuitem', this._menuItems, this._menuEvent)
+
+    this._gameIO.promptQuestion(questionObject, this._menuChoiceEvent)
   }
 }
 

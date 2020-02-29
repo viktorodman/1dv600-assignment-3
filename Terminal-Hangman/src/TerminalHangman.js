@@ -16,9 +16,14 @@ class TerminalHangman {
    * @memberof TerminalHangman
    */
   constructor () {
-    this._menu = new Menu()
+    this._events = {
+      menu: 'menuitemchosen',
+      gameExit: 'exittomenu',
+      appExit: 'exitconfirmation'
+    }
+
+    this._menu = new Menu(['Play Game', 'Change Settings', 'Quit Game'], this._events.menu)
     this._gameIO = new GameIO()
-    this._exitEvent = 'exitconfirmation'
   }
 
   /**
@@ -27,8 +32,9 @@ class TerminalHangman {
    * @memberof TerminalHangman
    */
   init () {
-    this._menu.on('menuitemchosen', (menuitem) => {
-      console.clear()
+    this._menu.on(this._events.menu, (menuitem) => {
+      this._menu.removeAllListeners(this._events.menu)
+
       switch (menuitem) {
         case 'Play Game': this._launchGame()
           break
@@ -37,7 +43,6 @@ class TerminalHangman {
         case 'Quit Game': this._quitGame()
           break
       }
-      this._menu.removeAllListeners('menuitemchosen')
     })
     this._menu.listMenuItems()
   }
@@ -48,11 +53,13 @@ class TerminalHangman {
    * @memberof TerminalHangman
    */
   _launchGame () {
-    const game = new Game()
-    game.on('exittomenu', () => {
+    const game = new Game(this._events.gameExit)
+
+    game.on(this._events.gameExit, () => {
       this.init()
-      game.removeAllListeners('exittomenu')
+      game.removeAllListeners(this._events.gameExit)
     })
+
     game.init()
   }
 
@@ -72,10 +79,9 @@ class TerminalHangman {
    */
   _quitGame () {
     this._gameIO.on(this._exitEvent, (confirmation) => {
-      console.clear()
       this._gameIO.removeAllListeners(this._exitEvent)
       if (confirmation) {
-        process.exit(1)
+        process.exit(0)
       } else {
         this.init()
       }

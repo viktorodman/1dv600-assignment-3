@@ -16,57 +16,14 @@ class GameIO extends EvenEmitter {
    */
   constructor () {
     super()
-    this._questionList = {
-      type: 'list',
-      message: '',
-      name: '',
-      choices: [],
-      prefix: ''
-    }
-    this._confirmList = {
-      type: 'confirm',
-      name: 'confirmation',
-      message: '',
-      prefix: ''
-    }
+    this._test = undefined
   }
 
-  /**
-   * Prompts the user to confirm a question.
-   *
-   * @param {string} message A question.
-   * @param {string} event The name of an event.
-   * @memberof GameIO
-   */
-  async confirm (message, event) {
+  async promptQuestion (questionObject, event) {
     try {
-      this._confirmList.message = message
-
-      const answer = await inquirer.prompt([this._confirmList])
-      this.emit(event, answer.confirmation)
-    } catch (error) {
-      console.error(error)
-      process.exit(1)
-    }
-  }
-
-  /**
-   * Prompts a question and lists alternatives.
-   *
-   * @param {string} message A question.
-   * @param {string} name A name to the question.
-   * @param {Array} choices The list items.
-   * @param {string} event A name of an event.
-   * @memberof GameIO
-   */
-  async listItems (message, name, choices, event) {
-    try {
-      this._questionList.message = message
-      this._questionList.name = name
-      this._questionList.choices = choices
-
-      const answer = await inquirer.prompt([this._questionList])
-      this.emit(event, answer[name])
+      const answer = await inquirer.prompt([questionObject])
+      console.clear()
+      this.emit(event, answer)
     } catch (error) {
       console.error(error)
       process.exit(1)

@@ -14,15 +14,20 @@ class Game extends EvenEmitter {
    * Creates an instance of Game.
    *
    * @memberof Game
+   * @param exitEvent
    */
-  constructor () {
+  constructor (exitEvent) {
     super()
     this._gameIO = new GameIO()
+    this._events = {
+      exit: exitEvent,
+      wordList: 'wordlistchoice',
+      playerChoice: 'playerinput',
+      letter: 'letterEntered'
+    }
+
     this._wordLists = ['Word List 1', 'Word List 2']
-    this._wordListEvent = 'wordlistchoice'
-    this._playerChoices = ['Enter Letter', 'Exit To Menu']
-    this._playerChoiceEvent = 'playerinput'
-    this._exitToMenuEvent = 'exitmenuconfirm'
+    this._playerAlt = ['Enter Letter', 'Exit To Menu']
   }
 
   /**
@@ -32,13 +37,20 @@ class Game extends EvenEmitter {
    * @memberof Game
    */
   init () {
-    this._gameIO.on(this._wordListEvent, (wordList) => {
-      console.clear()
-      // Generate Word From Word LIST
+    // Generate Word From Word LIST
+    const questionObject = {
+      type: 'list',
+      message: 'Choose a Word List',
+      name: 'wordlist',
+      choices: this._wordLists,
+      prefix: ''
+    }
+
+    this._gameIO.on(this._events.wordList, (wordList) => {
       this.startGame()
-      this._gameIO.removeAllListeners(this._wordListEvent)
+      this._gameIO.removeAllListeners(this._events.wordList)
     })
-    this._gameIO.listItems('Choose A Word List', 'wordlist', this._wordLists, this._wordListEvent)
+    this._gameIO.promptQuestion(questionObject, this._events.wordList)
   }
 
   /**
@@ -47,16 +59,37 @@ class Game extends EvenEmitter {
    * @memberof Game
    */
   startGame () {
-    this._gameIO.on(this._playerChoiceEvent, (playerChoice) => {
-      console.clear()
-      switch (playerChoice) {
-        case 'Enter Letter': console.log('Will be added later')
+    const questionObject = {
+      type: 'list',
+      message: 'Alternatives',
+      name: 'alternativ',
+      choices: this._playerAlt,
+      prefix: ''
+    }
+
+    this._gameIO.on(this._events.playerChoice, (playerChoice) => {
+      switch (playerChoice[questionObject.name]) {
+        case 'Enter Letter': this._enterLetter()
           break
         case 'Exit To Menu' : this.exitToMenu()
       }
-      this._gameIO.removeAllListeners(this._playerChoiceEvent)
+      this._gameIO.removeAllListeners(this._events.playerChoice)
     })
-    this._gameIO.listItems('Player Input (CHANGE THIS)', 'playerchoice', this._playerChoices, this._playerChoiceEvent)
+    this._gameIO.promptQuestion(questionObject, this._events.playerChoice)
+  }
+
+  _enterLetter () {
+    const questionObject = {
+      type: 'input',
+      message: 'Enter a Letter',
+      name: 'playerletter',
+      validate: (value) => value.length === 1 ? true : 'Please enter a letter'
+    }
+
+    this._gameIO.on(this._events.letter, (letter) => {
+      console.log(letter)
+    })
+    this._gameIO.promptQuestion(questionObject, this._events.letter)
   }
 
   /**
@@ -66,7 +99,6 @@ class Game extends EvenEmitter {
    */
   exitToMenu () {
     this._gameIO.on(this._exitToMenuEvent, (confirmation) => {
-      console.clear()
       if (confirmation) {
         this.emit('exittomenu')
       } else {
