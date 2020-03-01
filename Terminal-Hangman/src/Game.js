@@ -39,7 +39,8 @@ class Game extends EvenEmitter {
     this._gameInfo = {
       guessesLeft: undefined,
       guessedLetters: ['a', 'b'],
-      selectedWord: undefined
+      selectedWord: undefined,
+      placeholder: undefined
     }
   }
 
@@ -64,6 +65,7 @@ class Game extends EvenEmitter {
     this._gameIO.on(this._events.wordList, async (wordList) => {
       this._gameIO.removeAllListeners(this._events.wordList)
       this._gameInfo.selectedWord = await this._wordGenerator.getWord(wordList[questionObject.name])
+      this._gameInfo.placeholder = await this._wordGenerator.createPlaceHolder(this._gameInfo.selectedWord)
 
       this._enterLetter()
     })
@@ -77,7 +79,6 @@ class Game extends EvenEmitter {
       name: 'playerletter',
       suffix: '(Type !quit to exit to the menu)',
       guessedLetters: this._gameInfo.guessedLetters,
-      /* validate: (value) => (value.length === 1 || value === '!quit') ? true : 'Please enter a letter' */
       validate: (value) => {
         if (questionObject.guessedLetters.includes(value)) {
           return 'Letter already used! Please enter a new letter'
@@ -89,9 +90,14 @@ class Game extends EvenEmitter {
       }
     }
 
-    this._gameIO.on(this._events.letter, (letter) => {
+    this._gameIO.on(this._events.letter, (playerInput) => {
       this._gameIO.removeAllListeners(this._events.letter)
-      console.log(letter[questionObject.name])
+      const input = playerInput[questionObject.name].toLowerCase()
+      if (input === '!quit') {
+        this.exitToMenu()
+      } else {
+        this._checkLetterInWord(input)
+      }
     })
     this._gameIO.promptQuestion(questionObject, this._events.letter)
   }
@@ -105,17 +111,17 @@ class Game extends EvenEmitter {
     const questionObject = {
       type: 'confirm',
       name: 'confirmation',
-      message: '',
+      message: 'Are you sure you want to quit?',
       prefix: ''
     }
 
     this._gameIO.on(this._events.exit, (confirmation) => {
+      this._gameIO.removeAllListeners(this._events.exit)
       if (confirmation[questionObject.name]) {
         this.emit('exittomenu')
       } else {
-        this.startGame()
+        this._enterLetter()
       }
-      this._gameIO.removeAllListeners(this._events.exit)
     })
     this._gameIO.promptQuestion(questionObject, this._events.exit)
   }
@@ -127,7 +133,14 @@ class Game extends EvenEmitter {
   }
 
   _checkLetterInWord (letter) {
+    console.log(this._gameInfo.selectedWord)
+    if (this._gameInfo.selectedWord.includes(letter)) {
+      this._removePlaceholder(letter)
+    }
+  }
 
+  _removePlaceholder (letter) {
+    // FIX THIS TODAY
   }
 }
 

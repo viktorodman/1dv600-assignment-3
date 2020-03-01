@@ -57,6 +57,16 @@ class WordGenerator {
     }
     return listCopy
   }
+
+  createPlaceHolder (word) {
+    const test = [...word].map((character) => {
+      if (character !== ' ') {
+        character = '_'
+      }
+      return character
+    })
+    return test.join('')
+  }
 }
 
 module.exports = WordGenerator
