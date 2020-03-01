@@ -2,6 +2,7 @@
 
 const GameIO = require('./GameIO')
 const EvenEmitter = require('events')
+const WordGenerator = require('./WordGenerator')
 
 /**
  * Represents the game.
@@ -18,6 +19,7 @@ class Game extends EvenEmitter {
    */
   constructor (exitEvent) {
     super()
+    this._wordGenerator = new WordGenerator()
     this._gameIO = new GameIO()
     this._events = {
       exit: exitEvent,
@@ -25,9 +27,6 @@ class Game extends EvenEmitter {
       playerChoice: 'playerinput',
       letter: 'letterEntered'
     }
-
-    this._wordLists = ['Word List 1', 'Word List 2']
-    this._playerAlt = ['Enter Letter', 'Exit To Menu']
   }
 
   /**
@@ -36,19 +35,22 @@ class Game extends EvenEmitter {
    *
    * @memberof Game
    */
-  init () {
+  async init () {
     // Generate Word From Word LIST
     const questionObject = {
       type: 'list',
       message: 'Choose a Word List',
       name: 'wordlist',
-      choices: this._wordLists,
+      choices: await this._wordGenerator.getWordLists(),
       prefix: ''
     }
 
-    this._gameIO.on(this._events.wordList, (wordList) => {
-      this.startGame()
+    this._gameIO.on(this._events.wordList, async (wordList) => {
       this._gameIO.removeAllListeners(this._events.wordList)
+      const randomWord = await this._wordGenerator.getWord(wordList[questionObject.name])
+      console.log(randomWord)
+
+      /* this.startGame() */
     })
     this._gameIO.promptQuestion(questionObject, this._events.wordList)
   }
@@ -63,7 +65,7 @@ class Game extends EvenEmitter {
       type: 'list',
       message: 'Alternatives',
       name: 'alternativ',
-      choices: this._playerAlt,
+      choices: ['Enter Letter', 'Exit To Menu'],
       prefix: ''
     }
 
@@ -87,6 +89,7 @@ class Game extends EvenEmitter {
     }
 
     this._gameIO.on(this._events.letter, (letter) => {
+      this._gameIO.removeAllListeners(this._events.letter)
       console.log(letter)
     })
     this._gameIO.promptQuestion(questionObject, this._events.letter)
@@ -98,15 +101,22 @@ class Game extends EvenEmitter {
    * @memberof Game
    */
   exitToMenu () {
-    this._gameIO.on(this._exitToMenuEvent, (confirmation) => {
-      if (confirmation) {
+    const questionObject = {
+      type: 'confirm',
+      name: 'confirmation',
+      message: '',
+      prefix: ''
+    }
+
+    this._gameIO.on(this._events.exit, (confirmation) => {
+      if (confirmation[questionObject.name]) {
         this.emit('exittomenu')
       } else {
         this.startGame()
       }
-      this._gameIO.removeAllListeners(this._exitToMenuEvent)
+      this._gameIO.removeAllListeners(this._events.exit)
     })
-    this._gameIO.confirm('Are you sure you want to exit?', this._exitToMenuEvent)
+    this._gameIO.promptQuestion(questionObject, this._events.exit)
   }
 }
 

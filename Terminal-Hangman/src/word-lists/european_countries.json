@@ -1,5 +1,4 @@
-{
-    "EuropeanCountries": [
+[
     "Austria",
     "Belgium",
     "Bulgaria",
@@ -28,5 +27,4 @@
     "Spain",
     "Sweden",
     "United Kingdom"
-    ]
-  }
+]
