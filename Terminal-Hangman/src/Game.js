@@ -3,6 +3,7 @@
 const GameIO = require('./GameIO')
 const EvenEmitter = require('events')
 const WordGenerator = require('./WordGenerator')
+const drawings = require('./drawings/hangmanDrawing')
 
 /**
  * Represents the game.
@@ -38,7 +39,7 @@ class Game extends EvenEmitter {
     this._currentState = 'New Game'
     this._gameInfo = {
       guessesLeft: undefined,
-      guessedLetters: ['a', 'b'],
+      guessedLetters: [],
       selectedWord: undefined,
       placeholder: undefined
     }
@@ -52,7 +53,7 @@ class Game extends EvenEmitter {
    */
   async playGame () {
     if (this._currentState === this._gameStates.newGame) {
-      /* this._resetGame() */
+      this._resetGame()
     }
     const questionObject = {
       type: 'list',
@@ -77,6 +78,7 @@ class Game extends EvenEmitter {
       type: 'input',
       message: 'Enter a letter!',
       name: 'playerletter',
+      prefix: '',
       suffix: '(Type !quit to exit to the menu)',
       guessedLetters: this._gameInfo.guessedLetters,
       validate: (value) => {
@@ -89,6 +91,9 @@ class Game extends EvenEmitter {
         return 'Please enter a letter'
       }
     }
+    const { placeholder, guessedLetters, guessesLeft } = this._gameInfo
+
+    this._gameIO.updateGameboard(placeholder, guessedLetters, drawings[guessesLeft])
 
     this._gameIO.on(this._events.letter, (playerInput) => {
       this._gameIO.removeAllListeners(this._events.letter)
@@ -96,6 +101,7 @@ class Game extends EvenEmitter {
       if (input === '!quit') {
         this.exitToMenu()
       } else {
+        this._gameInfo.guessedLetters.push(input)
         this._checkLetterInWord(input)
       }
     })
@@ -133,14 +139,46 @@ class Game extends EvenEmitter {
   }
 
   _checkLetterInWord (letter) {
-    console.log(this._gameInfo.selectedWord)
     if (this._gameInfo.selectedWord.includes(letter)) {
-      this._removePlaceholder(letter)
+      this._gameInfo.placeholder = this._removePlaceholder(letter)
+
+      this.checkWordComplete() ? this.gameOver('win') : this._enterLetter()
+    } else {
+      this._gameInfo.guessesLeft--
+
+      this.checkLose() ? this.gameOver('lose') : this._enterLetter()
     }
   }
 
   _removePlaceholder (letter) {
-    // FIX THIS TODAY
+    const placeholder = [...this._gameInfo.placeholder].map((char, i) => {
+      if (this._gameInfo.selectedWord.charAt(i) === letter) {
+        char = this._gameInfo.selectedWord.charAt(i)
+      }
+      return char
+    })
+    return placeholder.join('')
+  }
+
+  checkWordComplete () {
+    let wordComplete = false
+    const { selectedWord, placeholder } = this._gameInfo
+    if (selectedWord === placeholder) {
+      wordComplete = true
+    }
+    return wordComplete
+  }
+
+  checkLose () {
+    let lose = false
+    if (this._gameInfo.guessesLeft === 0) {
+      lose = true
+    }
+    return lose
+  }
+
+  gameOver (message) {
+    console.log(`${message} Word: ${this._gameInfo.selectedWord}`)
   }
 }
 

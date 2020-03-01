@@ -29,6 +29,14 @@ class GameIO extends EvenEmitter {
       process.exit(1)
     }
   }
+
+  updateGameboard (placeholder, guessesedLetters, drawing) {
+    console.log(`
+Guessed Letters: ${guessesedLetters}
+${drawing}
+Placeholders: ${placeholder}
+`)
+  }
 }
 
 module.exports = GameIO
