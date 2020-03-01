@@ -24,6 +24,7 @@ class TerminalHangman {
 
     this._menu = new Menu(['Play Game', 'Change Settings', 'Quit Game'], this._events.menu)
     this._gameIO = new GameIO()
+    this._allowedGuesses = 8
   }
 
   /**
@@ -53,14 +54,14 @@ class TerminalHangman {
    * @memberof TerminalHangman
    */
   _launchGame () {
-    const game = new Game(this._events.gameExit)
+    const game = new Game(this._events.gameExit, this._allowedGuesses)
 
     game.on(this._events.gameExit, () => {
       this.init()
       game.removeAllListeners(this._events.gameExit)
     })
 
-    game.init()
+    game.playGame()
   }
 
   /**

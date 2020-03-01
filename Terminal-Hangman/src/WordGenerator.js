@@ -27,7 +27,7 @@ class WordGenerator {
       const filename = file.replace(' ', '_')
       const listObject = await fs.readJSON(`${this._filePath}/${filename}.json`)
 
-      return this.shuffleWordList(listObject)[0]
+      return this.shuffleWordList(listObject)[0].toLowerCase()
     } catch (error) {
       console.error(error)
       process.exit(1)

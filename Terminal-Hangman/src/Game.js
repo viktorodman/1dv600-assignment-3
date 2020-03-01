@@ -16,16 +16,30 @@ class Game extends EvenEmitter {
    *
    * @memberof Game
    * @param exitEvent
+   * @param allowedGuesses
    */
-  constructor (exitEvent) {
+  constructor (exitEvent, allowedGuesses) {
     super()
     this._wordGenerator = new WordGenerator()
     this._gameIO = new GameIO()
+    this._allowedGuesses = allowedGuesses
     this._events = {
       exit: exitEvent,
       wordList: 'wordlistchoice',
       playerChoice: 'playerinput',
       letter: 'letterEntered'
+    }
+    this._selectedWord = undefined
+    this._gameStates = {
+      playing: 'Playing',
+      newGame: 'New Game',
+      gameOver: 'Game Over'
+    }
+    this._currentState = 'New Game'
+    this._gameInfo = {
+      guessesLeft: undefined,
+      guessedLetters: ['a', 'b'],
+      selectedWord: undefined
     }
   }
 
@@ -35,8 +49,10 @@ class Game extends EvenEmitter {
    *
    * @memberof Game
    */
-  async init () {
-    // Generate Word From Word LIST
+  async playGame () {
+    if (this._currentState === this._gameStates.newGame) {
+      /* this._resetGame() */
+    }
     const questionObject = {
       type: 'list',
       message: 'Choose a Word List',
@@ -47,50 +63,35 @@ class Game extends EvenEmitter {
 
     this._gameIO.on(this._events.wordList, async (wordList) => {
       this._gameIO.removeAllListeners(this._events.wordList)
-      const randomWord = await this._wordGenerator.getWord(wordList[questionObject.name])
-      console.log(randomWord)
+      this._gameInfo.selectedWord = await this._wordGenerator.getWord(wordList[questionObject.name])
 
-      /* this.startGame() */
+      this._enterLetter()
     })
     this._gameIO.promptQuestion(questionObject, this._events.wordList)
-  }
-
-  /**
-   * Asks the user to enter a letter or quit the game.
-   *
-   * @memberof Game
-   */
-  startGame () {
-    const questionObject = {
-      type: 'list',
-      message: 'Alternatives',
-      name: 'alternativ',
-      choices: ['Enter Letter', 'Exit To Menu'],
-      prefix: ''
-    }
-
-    this._gameIO.on(this._events.playerChoice, (playerChoice) => {
-      switch (playerChoice[questionObject.name]) {
-        case 'Enter Letter': this._enterLetter()
-          break
-        case 'Exit To Menu' : this.exitToMenu()
-      }
-      this._gameIO.removeAllListeners(this._events.playerChoice)
-    })
-    this._gameIO.promptQuestion(questionObject, this._events.playerChoice)
   }
 
   _enterLetter () {
     const questionObject = {
       type: 'input',
-      message: 'Enter a Letter',
+      message: 'Enter a letter!',
       name: 'playerletter',
-      validate: (value) => value.length === 1 ? true : 'Please enter a letter'
+      suffix: '(Type !quit to exit to the menu)',
+      guessedLetters: this._gameInfo.guessedLetters,
+      /* validate: (value) => (value.length === 1 || value === '!quit') ? true : 'Please enter a letter' */
+      validate: (value) => {
+        if (questionObject.guessedLetters.includes(value)) {
+          return 'Letter already used! Please enter a new letter'
+        }
+        if (value.length === 1 || value === '!quit') {
+          return true
+        }
+        return 'Please enter a letter'
+      }
     }
 
     this._gameIO.on(this._events.letter, (letter) => {
       this._gameIO.removeAllListeners(this._events.letter)
-      console.log(letter)
+      console.log(letter[questionObject.name])
     })
     this._gameIO.promptQuestion(questionObject, this._events.letter)
   }
@@ -117,6 +118,16 @@ class Game extends EvenEmitter {
       this._gameIO.removeAllListeners(this._events.exit)
     })
     this._gameIO.promptQuestion(questionObject, this._events.exit)
+  }
+
+  _resetGame () {
+    this._gameInfo.guessesLeft = this._allowedGuesses
+    this._gameInfo.guessedLetters = []
+    this._currentState = this._gameStates.playing
+  }
+
+  _checkLetterInWord (letter) {
+
   }
 }
 
