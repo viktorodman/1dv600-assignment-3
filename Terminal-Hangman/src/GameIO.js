@@ -37,6 +37,14 @@ ${drawing}
 Placeholders: ${placeholder}
 `)
   }
+
+  displayGameResults (result, numOfguesses, word) {
+    console.log(`
+${result}
+Used Guesses: ${numOfguesses}
+Correct Word: ${word}
+`)
+  }
 }
 
 module.exports = GameIO

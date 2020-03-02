@@ -28,15 +28,9 @@ class Game extends EvenEmitter {
       exit: exitEvent,
       wordList: 'wordlistchoice',
       playerChoice: 'playerinput',
-      letter: 'letterEntered'
+      letter: 'letterEntered',
+      playAgain: 'playagain'
     }
-    this._selectedWord = undefined
-    this._gameStates = {
-      playing: 'Playing',
-      newGame: 'New Game',
-      gameOver: 'Game Over'
-    }
-    this._currentState = 'New Game'
     this._gameInfo = {
       guessesLeft: undefined,
       guessedLetters: [],
@@ -52,9 +46,7 @@ class Game extends EvenEmitter {
    * @memberof Game
    */
   async playGame () {
-    if (this._currentState === this._gameStates.newGame) {
-      this._resetGame()
-    }
+    this._resetGame()
     const questionObject = {
       type: 'list',
       message: 'Choose a Word List',
@@ -135,18 +127,17 @@ class Game extends EvenEmitter {
   _resetGame () {
     this._gameInfo.guessesLeft = this._allowedGuesses
     this._gameInfo.guessedLetters = []
-    this._currentState = this._gameStates.playing
   }
 
   _checkLetterInWord (letter) {
     if (this._gameInfo.selectedWord.includes(letter)) {
       this._gameInfo.placeholder = this._removePlaceholder(letter)
 
-      this.checkWordComplete() ? this.gameOver('win') : this._enterLetter()
+      this.checkWordComplete() ? this.gameOver('You win :)') : this._enterLetter()
     } else {
       this._gameInfo.guessesLeft--
 
-      this.checkLose() ? this.gameOver('lose') : this._enterLetter()
+      this.checkLose() ? this.gameOver('You lose :(') : this._enterLetter()
     }
   }
 
@@ -178,7 +169,22 @@ class Game extends EvenEmitter {
   }
 
   gameOver (message) {
-    console.log(`${message} Word: ${this._gameInfo.selectedWord}`)
+    const questionObject = {
+      type: 'confirm',
+      name: 'playagain',
+      message: 'Play Again?',
+      prefix: ''
+    }
+    this._gameIO.displayGameResults(message, (this._allowedGuesses - this._gameInfo.guessesLeft), this._gameInfo.selectedWord)
+    this._gameIO.on(this._events.playAgain, (confirmation) => {
+      this._gameIO.removeAllListeners(this._events.playAgain)
+      if (confirmation[questionObject.name]) {
+        this.playGame()
+      } else {
+        this.emit('exittomenu')
+      }
+    })
+    this._gameIO.promptQuestion(questionObject, this._events.playAgain)
   }
 }
 
