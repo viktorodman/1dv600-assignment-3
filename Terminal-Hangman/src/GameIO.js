@@ -41,7 +41,7 @@ Placeholders: ${placeholder}
   displayGameResults (result, numOfguesses, word) {
     console.log(`
 ${result}
-Used Guesses: ${numOfguesses}
+Wrong Guesses: ${numOfguesses}
 Correct Word: ${word}
 `)
   }
