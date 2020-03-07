@@ -2,7 +2,8 @@
 
 const GameIO = require('./GameIO')
 const EvenEmitter = require('events')
-const WordGenerator = require('./WordGenerator')
+const WordList = require('./WordList')
+const Word = require('./Word')
 const drawings = require('./drawings/hangmanDrawing')
 
 /**
@@ -21,7 +22,8 @@ class Game extends EvenEmitter {
    */
   constructor (exitEvent, allowedGuesses) {
     super()
-    this._wordGenerator = new WordGenerator()
+    /* this._wordList = new WordList('./src/word-lists') */
+    this._wordListDirPath = './src/word-lists'
     this._gameIO = new GameIO()
     this._allowedGuesses = allowedGuesses
     this._events = {
@@ -39,50 +41,64 @@ class Game extends EvenEmitter {
     }
   }
 
+  async setUpGame () {
+    const word = new Word()
+
+    const wordListChoice = await this.chooseWordList()
+    word.setRandomWord(wordListChoice)
+    word.setHiddenWord()
+
+    console.log(test)
+
+    /* this.playGame(randomWordFromList) */
+  }
+
+  async playGame (word) {
+
+  }
+
+  async chooseWordList () {
+    try {
+      const wordList = new WordList(this._wordListDirPath)
+
+      const availableWordLists = await wordList.getAvailableWordLists()
+      const chosenList = await this._gameIO.chooseWordList(availableWordLists.map(list => list.fileName))
+      const chosenFile = availableWordLists.find(({ fileName }) => fileName === chosenList)
+
+      return wordList.getWordList(chosenFile.filePath)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   /**
    * Starts a new game and asks the user
    * to choose a word-theme.
    *
    * @memberof Game
    */
-  async playGame () {
+  /* async playGame () {
     this._resetGame()
     const questionObject = {
       type: 'list',
       message: 'Choose a Word List',
       name: 'wordlist',
-      choices: await this._wordGenerator.getWordLists(),
+      choices: await this._wordList.getWordLists(),
       prefix: ''
     }
 
     this._gameIO.on(this._events.wordList, async (wordList) => {
       this._gameIO.removeAllListeners(this._events.wordList)
-      this._gameInfo.selectedWord = await this._wordGenerator.getWord(wordList[questionObject.name])
-      this._gameInfo.placeholder = await this._wordGenerator.createPlaceHolder(this._gameInfo.selectedWord)
+      this._gameInfo.selectedWord = await this._wordList.getWord(wordList[questionObject.name])
+      this._gameInfo.placeholder = await this._wordList.createPlaceHolder(this._gameInfo.selectedWord)
 
       this._enterLetter()
     })
     this._gameIO.promptQuestion(questionObject, this._events.wordList)
   }
 
-  _enterLetter () {
-    const questionObject = {
-      type: 'input',
-      message: 'Enter a letter!',
-      name: 'playerletter',
-      prefix: '',
-      suffix: '(Type !quit to exit to the menu)',
-      guessedLetters: this._gameInfo.guessedLetters,
-      validate: (value) => {
-        if (questionObject.guessedLetters.includes(value)) {
-          return 'Letter already used! Please enter a new letter'
-        }
-        if (value.length === 1 || value === '!quit') {
-          return true
-        }
-        return 'Please enter a letter'
-      }
-    }
+  async _enterLetter () {
+    const enteredLetter = await this._gameIO.enterLetter()
     const { placeholder, guessedLetters, guessesLeft } = this._gameInfo
 
     this._gameIO.updateGameboard(placeholder, guessedLetters, drawings[guessesLeft])
@@ -99,7 +115,7 @@ class Game extends EvenEmitter {
     })
     this._gameIO.promptQuestion(questionObject, this._events.letter)
   }
-
+ */
   /**
    * Prompts a confirmation for exiting to the main menu.
    *
@@ -137,7 +153,7 @@ class Game extends EvenEmitter {
     } else {
       this._gameInfo.guessesLeft--
 
-      this.checkLose() ? this.gameOver('You lose :(') : this._enterLetter()
+      this.checkLose(this._gameInfo.guessesLeft) ? this.gameOver('You lose :(') : this._enterLetter()
     }
   }
 
@@ -160,9 +176,9 @@ class Game extends EvenEmitter {
     return wordComplete
   }
 
-  checkLose () {
+  checkLose (guessesLeft) {
     let lose = false
-    if (this._gameInfo.guessesLeft === 0) {
+    if (guessesLeft === 0) {
       lose = true
     }
     return lose

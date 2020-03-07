@@ -61,7 +61,7 @@ class TerminalHangman {
       game.removeAllListeners(this._events.gameExit)
     })
 
-    game.playGame()
+    game.setUpGame()
   }
 
   /**
@@ -79,15 +79,22 @@ class TerminalHangman {
    * @memberof TerminalHangman
    */
   _quitGame () {
-    this._gameIO.on(this._exitEvent, (confirmation) => {
-      this._gameIO.removeAllListeners(this._exitEvent)
-      if (confirmation) {
+    const questionObject = {
+      type: 'confirm',
+      name: 'confirmation',
+      message: 'Are you sure you want to quit?',
+      prefix: ''
+    }
+
+    this._gameIO.on(this._events.appExit, (confirmation) => {
+      this._gameIO.removeAllListeners(this._events.appExit)
+      if (confirmation[questionObject.name]) {
         process.exit(0)
       } else {
         this.init()
       }
     })
-    this._gameIO.confirm('Are you sure you want to quit?', this._exitEvent)
+    this._gameIO.promptQuestion(questionObject, this._events.appExit)
   }
 }
 
