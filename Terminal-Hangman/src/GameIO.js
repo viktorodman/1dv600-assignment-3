@@ -42,8 +42,9 @@ class GameIO extends EvenEmitter {
     return answer[questionObject.name]
   }
 
-  updateGameboard (placeholder, guessesedLetters, drawing) {
+  updateGameboard (placeholder, guessesedLetters, drawing, word) {
     console.log(`
+Word: ${word}
 Guessed Letters: ${guessesedLetters}
 ${drawing}
 Placeholders: ${placeholder}
@@ -58,14 +59,14 @@ Correct Word: ${word}
 `)
   }
 
-  async enterLetter () {
+  async enterLetter (guessedLetters) {
     const questionObject = {
       type: 'input',
       message: 'Enter a letter!',
       name: 'playerletter',
       prefix: '',
       suffix: '(Type !quit to exit to the menu)',
-      guessedLetters: this._gameInfo.guessedLetters,
+      guessedLetters: guessedLetters,
       validate: (value) => {
         if (questionObject.guessedLetters.includes(value)) {
           return 'Letter already used! Please enter a new letter'
@@ -76,10 +77,9 @@ Correct Word: ${word}
         return 'Please enter a letter'
       }
     }
-
     const answer = await inquirer.prompt([questionObject])
-
-    return answer
+    console.clear()
+    return answer[questionObject.name]
   }
 }
 

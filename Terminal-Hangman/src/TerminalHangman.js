@@ -14,8 +14,9 @@ class TerminalHangman {
    * Creates an instance of TerminalHangman.
    *
    * @memberof TerminalHangman
+   * @param test
    */
-  constructor () {
+  constructor (test) {
     this._events = {
       menu: 'menuitemchosen',
       gameExit: 'exittomenu',

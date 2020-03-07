@@ -6,10 +6,7 @@ class WordList {
   constructor (wordListDir) {
     this._dirpath = wordListDir
     this._fileReader = new FileReader()
-    this._list = undefined
   }
-
-  // getWordLists => listsInDirectory
 
   async getAvailableWordLists () {
     try {
@@ -17,7 +14,7 @@ class WordList {
       const stringifyFiles = await wordListsInDir.map(list => {
         return {
           filePath: `${this._dirpath}/${list}`,
-          fileName: this._fileReader.stringifyFile(list)
+          fileName: this._fileReader.fileToString(list)
         }
       })
       return stringifyFiles
@@ -26,12 +23,8 @@ class WordList {
     }
   }
 
-  async setWordList (filePath) {
-    this._list = this._fileReader.getJsonFile(filePath)
-  }
-
-  getWordList () {
-    return this._list
+  async getWordList (filePath) {
+    return this._fileReader.getJsonFile(filePath)
   }
 }
 

@@ -31,6 +31,19 @@ class FileReader {
       console.error(error)
     }
   }
+
+  fileToString (file) {
+    const removeFileExtensions = this.removeFileExtension(file)
+    return this.replaceUnderscores(removeFileExtensions)
+  }
+
+  replaceUnderscores (word) {
+    return word.replace('_', ' ')
+  }
+
+  removeFileExtension (fileName) {
+    return fileName.slice(0, fileName.indexOf('.'))
+  }
 }
 
 module.exports = FileReader
