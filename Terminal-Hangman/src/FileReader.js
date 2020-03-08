@@ -27,16 +27,11 @@ class FileReader {
    * @memberof FileReader
    */
   async getFilesInDir (dirPath) {
-    try {
-      if (!await fs.pathExists(dirPath)) {
-        throw new Error('Directory does not exist')
-      }
-
-      return await readdir(dirPath)
-    } catch (error) {
-      console.error(error)
-      process.exit(1)
+    if (!await fs.pathExists(dirPath)) {
+      throw new Error('Directory does not exist')
     }
+
+    return readdir(dirPath)
   }
 
   /**
@@ -50,17 +45,13 @@ class FileReader {
    * @memberof FileReader
    */
   async getJsonFile (filePath) {
-    try {
-      if (!await fs.pathExists(filePath)) {
-        throw new Error('Files does not exist')
-      }
-      if (!filePath.endsWith('.json')) {
-        throw new Error('Files need to be in json format!')
-      }
-      return await fs.readJSON(filePath)
-    } catch (error) {
-      console.error(error)
+    if (!await fs.pathExists(filePath)) {
+      throw new Error('Files does not exist')
     }
+    if (!filePath.endsWith('.json')) {
+      throw new Error('Files needs to be in json format!')
+    }
+    return fs.readJSON(filePath)
   }
 
   /**
@@ -72,7 +63,7 @@ class FileReader {
    */
   fileToString (file) {
     const fileName = file.slice(0, file.indexOf('.'))
-    return fileName.word.replace('_', ' ')
+    return fileName.replace('_', ' ')
   }
 }
 
