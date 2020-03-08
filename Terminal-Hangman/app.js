@@ -7,7 +7,7 @@
  */
 
 const TerminalHangman = require('./src/TerminalHangman')
-console.clear()
+
 const terminalHangman = new TerminalHangman(false)
 
-terminalHangman.init()
+terminalHangman.startMenu()

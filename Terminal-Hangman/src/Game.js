@@ -19,51 +19,48 @@ class Game extends EvenEmitter {
    * Creates an instance of Game.
    *
    * @memberof Game
-   * @param exitEvent
-   * @param allowedGuesses
-   * @param test
+   * @param {string} exitEvent The name of an event that exits to the start menu.
+   * @param {number} allowedGuesses The allowed number of guesses.
+   * @param {boolean} test If the game is tested.
    */
   constructor (exitEvent, allowedGuesses, test) {
     super()
-    /* this._wordList = new WordList('./src/word-lists') */
     this._test = test
     this._wordListDirPath = './src/word-lists'
-
     this._gameIO = new GameIO()
     this._wordList = new WordList(this._wordListDirPath)
     this._word = new Word()
     this._gameLogic = new GameLogic(allowedGuesses)
     this._player = new Player()
 
-    this._allowedGuesses = allowedGuesses
-
-    this._events = {
-      exit: exitEvent,
-      wordList: 'wordlistchoice',
-      playerChoice: 'playerinput',
-      letter: 'letterEntered',
-      playAgain: 'playagain'
-    }
-    this._gameInfo = {
-      guessesLeft: undefined,
-      guessedLetters: [],
-      selectedWord: undefined,
-      placeholder: undefined
-    }
+    this._exitEvent = exitEvent
   }
 
+  /**
+   * Sets up a new game.
+   *
+   * @memberof Game
+   */
   async setUpGame () {
     try {
       const wordListChoice = await this.chooseWordList()
 
       this._word.setRandomWord(wordListChoice)
       this._word.setHiddenWord()
+      this._player.setGussedLetters([])
+      this._gameLogic.resetGusses()
+
       this.playGame()
     } catch (error) {
       console.error(error)
     }
   }
 
+  /**
+   * Starts a new round of the game.
+   *
+   * @memberof Game
+   */
   async playGame () {
     try {
       const guessedLetters = this._player.getGuessedLetters()
@@ -73,22 +70,59 @@ class Game extends EvenEmitter {
       this._gameIO.updateGameboard(hiddenWord, guessedLetters, drawings[guessesLeft], this._word.getWord())
       const enteredLetter = await this._gameIO.enterLetter(guessedLetters)
 
-      if (enteredLetter === '!quit') {
-        console.log('quitGame')
-      } else {
-        const letter = enteredLetter.toLowerCase()
-        this._player.addGuessedLetters(letter)
-        this.checkLetter(letter, this._word.getWord())
+      const gameState = this.checkGameState(enteredLetter.toLowerCase(), this._word.getWord())
+
+      switch (gameState) {
+        case 'Playing': this.playGame()
+          break
+        case 'Loss': this.gameOver('YOU LOSE')
+
+          break
+        case 'Win': this.gameOver('YOU WIN')
+
+          break
+        case 'Exit': this.exitToMenu()
       }
     } catch (error) {
       console.error(error)
     }
   }
 
+  /**
+   * Checks what the next state of the game should be.
+   *
+   * @param {string} letter The entered letter.
+   * @param {string} word The selected word.
+   * @returns {string} The next gameState.
+   * @memberof Game
+   */
+  checkGameState (letter, word) {
+    let gameState
+    if (letter === '!quit') {
+      return 'Exit'
+    }
+    this._player.addGuessedLetters(letter)
+
+    if (this._gameLogic.checkLetterInWord(letter, word)) {
+      this._word.removeHiddenLetters(letter)
+      this._gameLogic.checkWordComplete(word, this._word.getHiddenWord()) ? gameState = 'Win' : gameState = 'Playing'
+    } else {
+      this._gameLogic.removeGuess()
+      this._gameLogic.checkGameOver() ? gameState = 'Loss' : gameState = 'Playing'
+    }
+    return gameState
+  }
+
+  /**
+   * Prompts the user to choose a word-list.
+   *
+   * @returns {string} The filepath of the choosen word-list.
+   * @memberof Game
+   */
   async chooseWordList () {
     try {
       const availableWordLists = await this._wordList.getAvailableWordLists()
-      const chosenList = await this._gameIO.chooseWordList(availableWordLists.map(list => list.fileName))
+      const chosenList = await this._gameIO.promptList('Choose a Word List', availableWordLists.map(list => list.fileName))
 
       const chosenFile = availableWordLists.find(({ fileName }) => fileName === chosenList)
       return this._wordList.getWordList(chosenFile.filePath)
@@ -102,52 +136,32 @@ class Game extends EvenEmitter {
    *
    * @memberof Game
    */
-  exitToMenu () {
-    const questionObject = {
-      type: 'confirm',
-      name: 'confirmation',
-      message: 'Are you sure you want to quit?',
-      prefix: ''
-    }
+  async exitToMenu () {
+    const exitConfirmation = await this._gameIO.promptConfirmation('Are you sure you want to exit?')
 
-    this._gameIO.on(this._events.exit, (confirmation) => {
-      this._gameIO.removeAllListeners(this._events.exit)
-      if (confirmation[questionObject.name]) {
-        this.emit('exittomenu')
-      } else {
-        this._enterLetter()
-      }
-    })
-    this._gameIO.promptQuestion(questionObject, this._events.exit)
-  }
-
-  checkLetter (letter, word) {
-    if (this._gameLogic.checkLetterInWord(letter, word)) {
-      this._word.removeHiddenLetters(letter)
-      this._gameLogic.checkWordComplete(word, this._word.getHiddenWord()) ? this.gameOver('You Win :) !') : this.playGame()
+    if (exitConfirmation) {
+      this.emit(this._exitEvent)
     } else {
-      this._gameLogic.removeGuess()
-      this._gameLogic.checkGameOver() ? this.gameOver('You Lose :( !') : this.playGame()
+      this.playGame()
     }
   }
 
-  gameOver (message) {
-    const questionObject = {
-      type: 'confirm',
-      name: 'playagain',
-      message: 'Play Again?',
-      prefix: ''
+  /**
+   * Displays the result of the game and
+   * prompts a confirmation for playing the game again.
+   *
+   * @param {string} message The result of the game.
+   * @memberof Game
+   */
+  async gameOver (message) {
+    this._gameIO.displayGameResults(message, (this._gameLogic.getWrongGuesses()), this._word.getWord())
+    const playAgain = await this._gameIO.promptConfirmation('Play Again?')
+
+    if (playAgain) {
+      this.setUpGame()
+    } else {
+      this.emit(this._exitEvent)
     }
-    this._gameIO.displayGameResults(message, (this._allowedGuesses - this._gameInfo.guessesLeft), this._gameInfo.selectedWord)
-    this._gameIO.on(this._events.playAgain, (confirmation) => {
-      this._gameIO.removeAllListeners(this._events.playAgain)
-      if (confirmation[questionObject.name]) {
-        this.playGame()
-      } else {
-        this.emit('exittomenu')
-      }
-    })
-    this._gameIO.promptQuestion(questionObject, this._events.playAgain)
   }
 }
 

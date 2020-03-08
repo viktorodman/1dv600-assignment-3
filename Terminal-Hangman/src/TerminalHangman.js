@@ -1,7 +1,6 @@
 'use strict'
 
 const Game = require('./Game')
-const Menu = require('./Menu')
 const GameIO = require('./GameIO')
 
 /**
@@ -14,16 +13,12 @@ class TerminalHangman {
    * Creates an instance of TerminalHangman.
    *
    * @memberof TerminalHangman
-   * @param test
+   * @param {boolean} test True if the game should be started in test mode.
    */
   constructor (test) {
-    this._events = {
-      menu: 'menuitemchosen',
-      gameExit: 'exittomenu',
-      appExit: 'exitconfirmation'
-    }
+    this._exitEvent = 'exitToMenu'
+    this._menuItems = ['Play Game', 'Change Settings', 'Quit Game']
 
-    this._menu = new Menu(['Play Game', 'Change Settings', 'Quit Game'], this._events.menu)
     this._gameIO = new GameIO()
     this._allowedGuesses = 8
   }
@@ -33,44 +28,42 @@ class TerminalHangman {
    *
    * @memberof TerminalHangman
    */
-  init () {
-    this._menu.on(this._events.menu, (menuitem) => {
-      this._menu.removeAllListeners(this._events.menu)
+  async startMenu () {
+    console.clear()
+    const menuChoice = await this._gameIO.promptList('Game Menu', this._menuItems)
 
-      switch (menuitem) {
-        case 'Play Game': this._launchGame()
-          break
-        case 'Change Settings': this._settings()
-          break
-        case 'Quit Game': this._quitGame()
-          break
-      }
-    })
-    this._menu.listMenuItems()
+    switch (menuChoice) {
+      case 'Play Game': this.startGame()
+        break
+      case 'Change Settings': this.showSettings()
+        break
+      case 'Quit Game': this.quitGame()
+        break
+    }
   }
 
   /**
-   * Create a new game.
+   * Start a new game.
    *
    * @memberof TerminalHangman
    */
-  _launchGame () {
-    const game = new Game(this._events.gameExit, this._allowedGuesses)
+  startGame () {
+    const game = new Game(this._exitEvent, this._allowedGuesses)
 
-    game.on(this._events.gameExit, () => {
-      this.init()
-      game.removeAllListeners(this._events.gameExit)
+    game.on(this._exitEvent, () => {
+      this.startMenu()
+      game.removeAllListeners(this._exitEvent)
     })
 
     game.setUpGame()
   }
 
   /**
-   * Opens a menu with settings.
+   * Shows the game settings.
    *
    * @memberof TerminalHangman
    */
-  _settings () {
+  showSettings () {
     console.log('SETTINGS')
   }
 
@@ -79,23 +72,14 @@ class TerminalHangman {
    *
    * @memberof TerminalHangman
    */
-  _quitGame () {
-    const questionObject = {
-      type: 'confirm',
-      name: 'confirmation',
-      message: 'Are you sure you want to quit?',
-      prefix: ''
-    }
+  async quitGame () {
+    const exitConfirmation = await this._gameIO.promptConfirmation('Are you sure you want to quit?')
 
-    this._gameIO.on(this._events.appExit, (confirmation) => {
-      this._gameIO.removeAllListeners(this._events.appExit)
-      if (confirmation[questionObject.name]) {
-        process.exit(0)
-      } else {
-        this.init()
-      }
-    })
-    this._gameIO.promptQuestion(questionObject, this._events.appExit)
+    if (exitConfirmation) {
+      process.exit(0)
+    } else {
+      this.startMenu()
+    }
   }
 }
 

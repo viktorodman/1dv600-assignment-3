@@ -1,64 +1,73 @@
 'use strict'
-const EvenEmitter = require('events')
 const inquirer = require('inquirer')
 
 /**
- * Represnt the GameIO.
+ * Represents the Games IO.
  *
  * @class GameIO
- * @augments {EvenEmitter}
  */
-class GameIO extends EvenEmitter {
+class GameIO {
   /**
    * Creates an instance of GameIO.
    *
    * @memberof GameIO
    */
   constructor () {
-    super()
     this._test = undefined
   }
 
-  async promptQuestion (questionObject, event) {
-    try {
-      const answer = await inquirer.prompt([questionObject])
-      console.clear()
-      this.emit(event, answer)
-    } catch (error) {
-      console.error(error)
-      process.exit(1)
-    }
-  }
-
-  async chooseWordList (wordLists) {
+  /**
+   * Prompts a list of items.
+   *
+   * @param {string} message A question.
+   * @param {Array} choices An array of list items.
+   * @returns {string} A string of the selected item.
+   * @memberof GameIO
+   */
+  async promptList (message, choices) {
     const questionObject = {
       type: 'list',
-      message: 'Choose a Word List',
-      name: 'wordlist',
-      choices: wordLists,
+      message: message,
+      name: 'listItem',
+      choices: choices,
       prefix: ''
     }
     const answer = await inquirer.prompt([questionObject])
+    console.clear()
     return answer[questionObject.name]
   }
 
-  updateGameboard (placeholder, guessesedLetters, drawing, word) {
-    console.log(`
-Word: ${word}
-Guessed Letters: ${guessesedLetters}
-${drawing}
-Placeholders: ${placeholder}
-`)
+  /**
+   * Prompts for confirmation for a question.
+   *
+   * @param {string} message A question.
+   * @returns {boolean} True or false.
+   * @memberof GameIO
+   */
+  async promptConfirmation (message) {
+    try {
+      const questionObject = {
+        type: 'confirm',
+        name: 'confirmation',
+        message: message,
+        prefix: ''
+      }
+      const answer = await inquirer.prompt([questionObject])
+      console.clear()
+      return answer[questionObject.name]
+    } catch (error) {
+      console.error(error)
+    }
   }
 
-  displayGameResults (result, numOfguesses, word) {
-    console.log(`
-${result}
-Wrong Guesses: ${numOfguesses}
-Correct Word: ${word}
-`)
-  }
-
+  /**
+   * Prompts for the input of a letter.
+   * Also validates the input.
+   *
+   * @param {Array} guessedLetters The previous entered letters.
+   * @returns {string} The entered letter.
+   * @memberof GameIO
+   */
   async enterLetter (guessedLetters) {
     const questionObject = {
       type: 'input',
@@ -68,7 +77,7 @@ Correct Word: ${word}
       suffix: '(Type !quit to exit to the menu)',
       guessedLetters: guessedLetters,
       validate: (value) => {
-        if (questionObject.guessedLetters.includes(value)) {
+        if (questionObject.guessedLetters.includes(value.toLowerCase())) {
           return 'Letter already used! Please enter a new letter'
         }
         if (value.length === 1 || value === '!quit') {
@@ -80,6 +89,39 @@ Correct Word: ${word}
     const answer = await inquirer.prompt([questionObject])
     console.clear()
     return answer[questionObject.name]
+  }
+
+  /**
+   * Updates the current result of the game.
+   *
+   *
+   * @param {string} hiddenWord The hidden version of the word.
+   * @param {Array} guessesedLetters The guessed letters.
+   * @param {string} drawing The current drawing of the gallows pole.
+   * @memberof GameIO
+   */
+  updateGameboard (hiddenWord, guessesedLetters, drawing) {
+    console.log(`
+Guessed Letters: ${guessesedLetters}
+${drawing}
+Placeholders: ${hiddenWord}
+`)
+  }
+
+  /**
+   * Displays the result of the game.
+   *
+   * @param {string} result The result of the game.
+   * @param {number} numOfguesses The number of guesses used in the game.
+   * @param {string} word The correct word of the game.
+   * @memberof GameIO
+   */
+  displayGameResults (result, numOfguesses, word) {
+    console.log(`
+${result}
+Wrong Guesses: ${numOfguesses}
+Correct Word: ${word}
+`)
   }
 }
 
