@@ -43,14 +43,23 @@ class Game extends EvenEmitter {
    */
   async setUpGame () {
     try {
-      const wordListChoice = await this.chooseWordList()
+      if (!this._test) {
+        const wordListChoice = await this.chooseWordList()
 
-      this._word.setRandomWord(wordListChoice)
-      this._word.setHiddenWord()
-      this._player.setGussedLetters([])
-      this._gameLogic.resetGusses()
+        this._word.setRandomWord(wordListChoice)
+        this._word.setHiddenWord()
+        this._player.setGussedLetters([])
+        this._gameLogic.resetGusses()
 
-      this.playGame()
+        this.playGame()
+      } else {
+        this._word.setWord('te')
+        this._word.setHiddenWord()
+        this._player.setGussedLetters([])
+        this._gameLogic.resetGusses()
+
+        this.playGame()
+      }
     } catch (error) {
       console.error(error)
     }

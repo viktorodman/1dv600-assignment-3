@@ -47,7 +47,11 @@ class GameLogic {
    * @memberof GameLogic
    */
   checkWordComplete (word, hiddenWord) {
-    return word === hiddenWord
+    let wordComplete = false
+    if (word === hiddenWord) {
+      wordComplete = true
+    }
+    return wordComplete
   }
 
   /**

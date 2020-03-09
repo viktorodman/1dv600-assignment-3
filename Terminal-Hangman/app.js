@@ -7,7 +7,12 @@
  */
 
 const TerminalHangman = require('./src/TerminalHangman')
+let startValue = false
 
-const terminalHangman = new TerminalHangman(false)
+if (process.argv[2] === 'test') {
+  startValue = true
+}
+
+const terminalHangman = new TerminalHangman(startValue)
 
 terminalHangman.startMenu()

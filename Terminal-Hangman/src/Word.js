@@ -26,6 +26,10 @@ class Word {
     this._word = list[Math.floor(Math.random() * list.length)].toLowerCase()
   }
 
+  setWord (word) {
+    this._word = word
+  }
+
   /**
    * Creates a hidden version of the word.
    *
